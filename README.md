@@ -2,6 +2,8 @@
 
 A lightweight API for buoy telemetry ingestion built with FastAPI and Firebase Realtime Database.
 
+Current release status: `v0.1.0-alpha.1`
+
 It is organized around two main flows:
 
 - devices send telemetry to `/telemetry` using the buoy token;
