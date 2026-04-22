@@ -1,0 +1,40 @@
+substitutions:
+  _SERVICE_NAME: buoy-telemetry-api
+  _REGION: us-central1
+  _PLATFORM: managed
+  _APP_ENV: production
+  _FIREBASE_DATABASE_URL: https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com
+  _ADMIN_API_TOKEN: change-me
+  _RUNTIME_SERVICE_ACCOUNT: your-cloud-run-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA
+      - -t
+      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
+      - .
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image
+      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA
+      - --platform
+      - ${_PLATFORM}
+      - --region
+      - ${_REGION}
+      - --allow-unauthenticated
+      - --service-account
+      - ${_RUNTIME_SERVICE_ACCOUNT}
+      - --set-env-vars
+      - FIREBASE_DATABASE_URL=${_FIREBASE_DATABASE_URL},ADMIN_API_TOKEN=${_ADMIN_API_TOKEN},APP_ENV=${_APP_ENV}
+
+images:
+  - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA
+  - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest

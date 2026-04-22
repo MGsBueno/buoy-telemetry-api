@@ -190,6 +190,42 @@ docker run --rm -p 8080:8080 \
   buoy-telemetry-api
 ```
 
+### Cloud Build
+
+This repository includes a `cloudbuild.yaml` that:
+- builds the container image;
+- tags it with `latest` and the commit SHA;
+- deploys the service to Cloud Run.
+
+Before using it, update the substitutions in `cloudbuild.yaml` or override them at submit time.
+
+Example:
+
+```bash
+gcloud builds submit \
+  --config cloudbuild.yaml \
+  --substitutions=_SERVICE_NAME=buoy-telemetry-api,_REGION=us-central1,_APP_ENV=production,_FIREBASE_DATABASE_URL=https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com,_ADMIN_API_TOKEN=your-admin-token,_RUNTIME_SERVICE_ACCOUNT=your-cloud-run-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+```
+
+### GitHub Actions Deployment
+
+This repository also includes `.github/workflows/deploy-cloud-run.yml`.
+
+Recommended authentication is Workload Identity Federation.
+
+Required GitHub repository secrets:
+- `GCP_PROJECT_ID`
+- `GCP_WORKLOAD_IDENTITY_PROVIDER`
+- `GCP_DEPLOY_SERVICE_ACCOUNT`
+- `GCP_RUNTIME_SERVICE_ACCOUNT`
+- `FIREBASE_DATABASE_URL`
+- `ADMIN_API_TOKEN`
+
+The workflow:
+- authenticates to Google Cloud;
+- builds and pushes the container image;
+- deploys the current revision to Cloud Run.
+
 ## Future Improvements
 
 - device retry and local buffering for intermittent connectivity;

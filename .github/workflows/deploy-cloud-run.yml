@@ -1,0 +1,58 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+      - release/cloud-run-alpha
+  workflow_dispatch:
+
+env:
+  SERVICE_NAME: buoy-telemetry-api
+  REGION: us-central1
+  APP_ENV: production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build container image
+        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+
+      - name: Push container image
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+
+      - id: deploy
+        name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          flags: >-
+            --allow-unauthenticated
+            --service-account=${{ secrets.GCP_RUNTIME_SERVICE_ACCOUNT }}
+            --set-env-vars=FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }},ADMIN_API_TOKEN=${{ secrets.ADMIN_API_TOKEN }},APP_ENV=${{ env.APP_ENV }}
+
+      - name: Show deployed URL
+        run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
