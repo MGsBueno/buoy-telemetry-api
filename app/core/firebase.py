@@ -18,11 +18,13 @@ def get_firebase_app():
     try:
         with _firebase_lock:
             if not firebase_admin._apps:
-                cred = credentials.Certificate(settings.firebase_credentials_path)
-                firebase_admin.initialize_app(
-                    cred,
-                    {"databaseURL": settings.firebase_database_url}
-                )
+                options = {"databaseURL": settings.firebase_database_url}
+
+                if settings.firebase_credentials_path:
+                    cred = credentials.Certificate(settings.firebase_credentials_path)
+                    firebase_admin.initialize_app(cred, options)
+                else:
+                    firebase_admin.initialize_app(options=options)
             return firebase_admin.get_app()
     except ConfigurationError:
         raise

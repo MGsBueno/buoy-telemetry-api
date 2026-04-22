@@ -29,7 +29,7 @@ Use `.env.example` as the starting point.
 Main variables:
 
 - `FIREBASE_DATABASE_URL`: Realtime Database URL
-- `FIREBASE_CREDENTIALS_PATH`: path to the Firebase service account JSON
+- `FIREBASE_CREDENTIALS_PATH`: path to the Firebase service account JSON for local development
 - `ADMIN_API_TOKEN`: token required for admin endpoints
 - `APP_ENV`: `development`, `staging`, or `production`
 
@@ -37,6 +37,7 @@ Notes:
 
 - do not expose `serviceAccountKey.json`;
 - do not reuse the admin token on devices;
+- on Cloud Run, prefer the runtime service account instead of mounting a local JSON key;
 - replace all example values before deploying.
 
 ## Running Locally
@@ -112,7 +113,7 @@ Expected response:
 {
   "id": "reading-1",
   "temperature": 24.5,
-  "battery_voltage": 12.38
+  "battery_voltage": 12.38,
   "latitude": -23.5505,
   "longitude": -46.6333,
   "timestamp": 1710000000
@@ -149,6 +150,45 @@ The test suite includes:
 
 - API tests with mocks;
 - functional tests with an in-memory Firebase-Like layer.
+
+## Cloud Run Deployment
+
+This project is ready to be containerized and deployed to Google Cloud Run.
+
+### Recommended approach
+
+- use Cloud Run with a dedicated runtime service account;
+- grant that service account access to Firebase Realtime Database;
+- do not deploy `serviceAccountKey.json` to production;
+- set `FIREBASE_DATABASE_URL`, `ADMIN_API_TOKEN`, and `APP_ENV` as environment variables.
+
+### Build and deploy
+
+```bash
+gcloud builds submit --tag gcr.io/PROJECT_ID/buoy-telemetry-api
+```
+
+```bash
+gcloud run deploy buoy-telemetry-api \
+  --image gcr.io/PROJECT_ID/buoy-telemetry-api \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --service-account YOUR_CLOUD_RUN_SERVICE_ACCOUNT \
+  --set-env-vars FIREBASE_DATABASE_URL=https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com,ADMIN_API_TOKEN=your-admin-token,APP_ENV=production
+```
+
+### Local container test
+
+```bash
+docker build -t buoy-telemetry-api .
+docker run --rm -p 8080:8080 \
+  -e FIREBASE_DATABASE_URL=https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com \
+  -e FIREBASE_CREDENTIALS_PATH=serviceAccountKey.json \
+  -e ADMIN_API_TOKEN=your-admin-token \
+  -e APP_ENV=development \
+  buoy-telemetry-api
+```
 
 ## Future Improvements
 

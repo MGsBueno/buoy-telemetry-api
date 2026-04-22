@@ -25,8 +25,6 @@ class Settings:
         missing = []
         if not self.firebase_database_url:
             missing.append("FIREBASE_DATABASE_URL")
-        if not self.firebase_credentials_path:
-            missing.append("FIREBASE_CREDENTIALS_PATH")
         if not self.admin_api_token:
             missing.append("ADMIN_API_TOKEN")
 
@@ -35,11 +33,12 @@ class Settings:
                 f"Missing required settings: {', '.join(missing)}"
             )
 
-        credentials_path = Path(self.firebase_credentials_path)
-        if not credentials_path.exists() or not credentials_path.is_file():
-            raise ConfigurationError(
-                "FIREBASE_CREDENTIALS_PATH does not point to a valid file"
-            )
+        if self.firebase_credentials_path:
+            credentials_path = Path(self.firebase_credentials_path)
+            if not credentials_path.exists() or not credentials_path.is_file():
+                raise ConfigurationError(
+                    "FIREBASE_CREDENTIALS_PATH does not point to a valid file"
+                )
 
 
 settings = Settings()
