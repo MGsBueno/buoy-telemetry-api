@@ -49,10 +49,16 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          env_vars: |-
+            FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}
+            FIREBASE_CREDENTIALS_PATH=/secrets/firebase/service-account.json
+            ADMIN_API_TOKEN=${{ secrets.ADMIN_API_TOKEN }}
+            APP_ENV=${{ env.APP_ENV }}
+          secrets: |-
+            /secrets/firebase/service-account.json=${{ secrets.FIREBASE_SERVICE_ACCOUNT_SECRET }}:latest
           flags: >-
             --allow-unauthenticated
             --service-account=${{ secrets.GCP_RUNTIME_SERVICE_ACCOUNT }}
-            --set-env-vars=FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }},ADMIN_API_TOKEN=${{ secrets.ADMIN_API_TOKEN }},APP_ENV=${{ env.APP_ENV }}
 
       - name: Show deployed URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
