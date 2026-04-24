@@ -1,43 +1,30 @@
 # Buoy Telemetry API
 
-A lightweight API for buoy telemetry ingestion built with FastAPI and Firebase Realtime Database.
+A lightweight telemetry ingestion API for connected buoys, built with FastAPI and Firebase Realtime Database.
 
-It is organized around two main flows:
+Current release status: `v0.1.0-alpha.1`
+
+The platform is organized around two primary flows:
 
 - devices send telemetry to `/telemetry` using the buoy token;
 - operators manage buoys and readings through endpoints protected by `X-Admin-Token`.
 
-## What the API Does
+## Documentation
 
-- creates, lists, updates, and deletes buoys;
-- stores manual readings and telemetry readings;
-- persists data in Firebase Realtime Database;
-- exposes interactive documentation at `/docs`.
+- [Architecture](docs/architecture.md): system structure, Google Cloud ecosystem, and design decisions
+- [Setup and Deployment](docs/setup-and-deployment.md): local setup, configuration, testing, and Cloud Run deployment
 
-## Requirements
+## Product Scope
 
-- Python 3.12+
-- a Firebase service account credential
-- Firebase Realtime Database enabled in your project
+- onboard and manage buoy devices;
+- ingest telemetry from field devices;
+- store cumulative readings in Firebase Realtime Database;
+- expose admin endpoints for operational control and retrieval;
+- provide interactive API documentation at `/docs`.
 
-## Configuration
+## Quick Start
 
-Use `.env.example` as the starting point.
-
-Main variables:
-
-- `FIREBASE_DATABASE_URL`: Realtime Database URL
-- `FIREBASE_CREDENTIALS_PATH`: path to the Firebase service account JSON
-- `ADMIN_API_TOKEN`: token required for admin endpoints
-- `APP_ENV`: `development`, `staging`, or `production`
-
-Notes:
-
-- do not expose `serviceAccountKey.json`;
-- do not reuse the admin token on devices;
-- replace all example values before deploying.
-
-## Running Locally
+Use `.env.example` as the starting point, then run:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -48,6 +35,8 @@ Useful URLs:
 
 - `http://127.0.0.1:8000/docs`
 - `http://127.0.0.1:8000/health`
+
+For detailed setup, configuration, testing, and deployment guidance, see [docs/setup-and-deployment.md](docs/setup-and-deployment.md).
 
 ## Authentication
 
@@ -110,7 +99,7 @@ Expected response:
 {
   "id": "reading-1",
   "temperature": 24.5,
-  "battery_voltage": 12.38
+  "battery_voltage": 12.38,
   "latitude": -23.5505,
   "longitude": -46.6333,
   "timestamp": 1710000000
@@ -128,25 +117,13 @@ curl -X GET "http://127.0.0.1:8000/buoys" \
 
 This API intentionally sits between the device and Firebase.
 
-That design helps keep the system safer and easier to operate:
+That architectural decision keeps the system safer and easier to operate:
 
 - the Firebase service account stays on the backend, never on the device;
 - business rules stay centralized in one place;
 - device tokens can be validated before data reaches the database;
 - the backend can evolve without reflashing device logic for every backend change;
 - monitoring, rate limiting, and auditing are easier to add at the API layer.
-
-## Tests
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pytest -q tests
-```
-
-The test suite includes:
-
-- API tests with mocks;
-- functional tests with an in-memory Firebase-Like layer.
 
 ## Future Improvements
 
